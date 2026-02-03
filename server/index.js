@@ -8,6 +8,8 @@ import projectRoutes from './routes/projects.js';
 import educationRoutes from './routes/education.js';
 import experienceRoutes from './routes/experiences.js';
 import resumeRoutes from './routes/resumes.js';
+import { router as authRoutes } from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,8 +20,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'http://127.0.0.1:5175',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
@@ -32,14 +44,25 @@ mongoose.connect(MONGODB_URI)
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/education', educationRoutes);
 app.use('/api/experiences', experienceRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/profile', profileRoutes);
 
-// Health check
+// Database check route
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Resume Builder API is running' });
+  res.json({ 
+    status: 'ok', 
+    message: 'Resume Builder API is running',
+    dbState: mongoose.connection.readyState
+  });
+});
+
+// Handle 404 for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.originalUrl}` });
 });
 
 // Serve static files in production

@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const experienceSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true,
+    index: true,
+  },
   company: {
     type: String,
     required: true,

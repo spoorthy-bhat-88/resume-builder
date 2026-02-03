@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const educationSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true,
+    index: true,
+  },
   institution: {
     type: String,
     required: true,

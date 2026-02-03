@@ -1,21 +1,44 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import Education from '../models/Education.js';
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-// Get all education
-router.get('/', async (req, res) => {
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Get all education for authenticated user
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const education = await Education.find().sort({ createdAt: -1 });
+    const education = await Education.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.json(education);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Create education
-router.post('/', async (req, res) => {
-  const education = new Education(req.body);
+// Create education for authenticated user
+router.post('/', authenticateToken, async (req, res) => {
+  const education = new Education({
+    ...req.body,
+    userId: req.user.id
+  });
   try {
     const newEducation = await education.save();
     res.status(201).json(newEducation);
@@ -24,9 +47,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update education
-router.put('/:id', async (req, res) => {
+// Update education (only if it belongs to user)
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
+    const education = await Education.findById(req.params.id);
+    if (!education) {
+      return res.status(404).json({ message: 'Education not found' });
+    }
+    if (education.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to update this education' });
+    }
     const updatedEducation = await Education.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -38,9 +68,16 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete education
-router.delete('/:id', async (req, res) => {
+// Delete education (only if it belongs to user)
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
+    const education = await Education.findById(req.params.id);
+    if (!education) {
+      return res.status(404).json({ message: 'Education not found' });
+    }
+    if (education.userId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to delete this education' });
+    }
     await Education.findByIdAndDelete(req.params.id);
     res.json({ message: 'Education deleted' });
   } catch (error) {

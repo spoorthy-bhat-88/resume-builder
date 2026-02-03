@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../utils/storage';
 
 const AppContext = createContext();
@@ -17,45 +17,43 @@ export const AppProvider = ({ children }) => {
   const [experiences, setExperiences] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [currentView, setCurrentView] = useState('master'); // 'master' or 'builder'
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   // User profile state
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('profile');
-    return saved ? JSON.parse(saved) : { name: '', email: '', phone: '', city: '', state: '' };
-  });
+  const [profile, setProfile] = useState({ name: '', email: '', phone: '', city: '', state: '' });
 
-  // Load data on mount
-  useEffect(() => {
-    loadAllData();
+  const clearAllData = useCallback(() => {
+    setProjects([]);
+    setEducation([]);
+    setExperiences([]);
+    setResumes([]);
+    setProfile({ name: '', email: '', phone: '', city: '', state: '' });
+    setError(null);
   }, []);
 
-  // Persist profile to localStorage
-  useEffect(() => {
-    localStorage.setItem('profile', JSON.stringify(profile));
-  }, [profile]);
-
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [projectsData, educationData, experiencesData, resumesData] = await Promise.all([
+      const [projectsData, educationData, experiencesData, resumesData, profileData] = await Promise.all([
         api.getProjects(),
         api.getEducation(),
         api.getExperiences(),
         api.getResumes(),
+        api.getProfile()
       ]);
       setProjects(projectsData);
       setEducation(educationData);
       setExperiences(experiencesData);
       setResumes(resumesData);
+      setProfile(profileData || { name: '', email: '', phone: '', city: '', state: '' });
     } catch (err) {
       setError(err.message);
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Projects
   const addProject = async (project) => {
@@ -207,6 +205,8 @@ export const AppProvider = ({ children }) => {
     deleteResume,
     profile,
     setProfile,
+    clearAllData,
+    loadAllData,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
