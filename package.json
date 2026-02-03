@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "A customizable resume builder app with MongoDB backend",
   "type": "module",
+  "homepage": "https://spoorthy-bhat-88.github.io/resume-builder",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "dev": "vite",
     "dev:server": "nodemon server/index.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
@@ -17,8 +20,8 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "html2canvas": "^1.4.1",
-    "jspdf": "^4.0.0",
     "jsonwebtoken": "^9.0.0",
+    "jspdf": "^4.0.0",
     "mongoose": "^8.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
+    "gh-pages": "^6.3.0",
     "nodemon": "^3.0.2",
     "vite": "^5.0.0"
   }

@@ -1,9 +1,15 @@
 node_modules
 dist
-.env
-.env.local
 *.log
 .DS_Store
 coverage
 .vscode
 .idea
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.*
+!.env.example
+!.env.local.example
